@@ -127,7 +127,7 @@ def render_timeline(video, matches, px_per_second):
     for s in video.shots:
         details = [f"Shot {s.index}: {fmt_time(s.start)} – {fmt_time(s.end)}"] + [
             f"{k}: {v}"
-            for k, v in [("Size", s.size), ("Angle", s.angle), ("Emotion", s.emotion)]
+            for k, v in [("Size", s.size), ("Angle", s.angle), ("Emotion", s.emotion), ("Movement", s.movement)]
             if v
         ]
         shade = "0.22" if s.index % 2 == 0 else "0.38"
@@ -241,10 +241,10 @@ def search_page(videos):
             key="code",
             height=260,
             help="Define `find(video)`. Available: video.shots (shot.index/start/end/duration/"
-            "actors/size/angle/emotion/faces/scalars/center(actor)/side(actor)/get(timeline)/"
+            "actors/size/angle/emotion/movement/faces/scalars/center(actor)/side(actor)/get(timeline)/"
             "dominant(timeline)), video.faces "
             "(face.time/cluster/x/y/w/h/side), video.timelines, alternating(), runs(), "
-            "monotonic(), steady(), scale(). angle is ground truth only; emotion, faces and scalars "
+            "monotonic(), steady(), scale(). angle is ground truth only; emotion, movement, faces and scalars "
             "(shot size / emotion probabilities) are predictions only.",
         )
         if st.form_submit_button("Search", type="primary"):

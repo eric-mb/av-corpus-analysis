@@ -37,6 +37,22 @@ SHOT_SCALE = {
     "EST": 8,
 }
 
+# Newer TIB-AV-A versions name some timelines and labels differently. They are
+# renamed on loading so that all exports work the same way.
+TIMELINE_ALIASES = {
+    "Shot Scales": "Shot Sizes",
+    "Medium": "Medium Shot",
+    "Full": "Full Shot",
+    "Long": "Long Shot",
+}
+LABEL_ALIASES = {
+    "Shot Scale::Extreme Close-Up": "Shot Size::Extreme Close-Up",
+    "Shot Scale::Close-Up": "Shot Size::Close-Up",
+    "Shot Scale::Medium": "Shot Size::Medium Shot",
+    "Shot Scale::Full": "Shot Size::Full Shot",
+    "Shot Scale::Long": "Shot Size::Long Shot",
+}
+
 
 #################
 # Data model
@@ -118,6 +134,12 @@ class Shot:
     @property
     def emotion(self):
         label = self.dominant("Face Emotions")
+        return label.split("::")[-1] if label else None
+
+    @property
+    def movement(self):
+        """Camera movement (Static, Motion, Pull, Push); only in newer TIB-AV-A exports."""
+        label = self.dominant("Shot Movements")
         return label.split("::")[-1] if label else None
 
 
@@ -212,14 +234,14 @@ def load_video(path, mtime):
     with zipfile.ZipFile(path) as zip_file:
         meta = yaml.safe_load(zip_file.read("video.yml"))
         timeline_list = yaml.safe_load(zip_file.read("timelines.yml"))
-        timeline_names = {x["id"]: x["name"] for x in timeline_list}
+        timeline_names = {x["id"]: TIMELINE_ALIASES.get(x["name"], x["name"]) for x in timeline_list}
         thumbnail_id = find_thumbnail_data_id(zip_file)
         result_data = {
             x["id"]: x["data_id"] for x in yaml.safe_load(zip_file.read("plugin_run_results.yml")) or []
         }
         # scalar data id -> (timeline name, parent timeline name)
         scalar_timelines = {
-            result_data[x["plugin_run_result_id"]]: (x["name"], timeline_names.get(x["parent_id"]))
+            result_data[x["plugin_run_result_id"]]: (timeline_names[x["id"]], timeline_names.get(x["parent_id"]))
             for x in timeline_list
             if x.get("plugin_run_result_id") in result_data
         }
@@ -237,7 +259,7 @@ def load_video(path, mtime):
                 if data_type == "AnnotationData" and data_id in timeline_names:
                     annotations = yaml.safe_load(inner.read("annotation_data.yml"))
                     timelines[timeline_names[data_id]] = [
-                        Annotation(x["start"], x["end"], x["labels"])
+                        Annotation(x["start"], x["end"], [LABEL_ALIASES.get(l, l) for l in x["labels"]])
                         for x in annotations.get("annotations") or []
                     ]
                 elif data_type == "ImagesData" and data_id == thumbnail_id:
@@ -601,9 +623,10 @@ DATA_SOURCES = {
     GROUND_TRUTH: "Only the imported `GT:` timelines: shots, actors, scenes, distance "
     "(→ `shot.size`) and angle.",
     "Predictions (TIB-AV-A)": "Only automatic TIB-AV-A results: shot detection, face clustering "
-    "(→ `shot.actors` = `Face 0`, `Face 1`, …), face emotions and `Shot Sizes` (→ `shot.size`).",
+    "(→ `shot.actors` = `Face 0`, `Face 1`, …), face emotions, `Shot Sizes` (→ `shot.size`) and, in newer exports, `Shot Movements` "
+    "(→ `shot.movement`).",
 }
-PREDICTION_TIMELINES = {"Shots", "Shot Sizes", "Face Emotions"}
+PREDICTION_TIMELINES = {"Shots", "Shot Sizes", "Face Emotions", "Shot Movements"}
 
 
 def prepare_videos(videos, use_gt):

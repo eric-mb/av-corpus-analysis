@@ -85,6 +85,8 @@ Each chart has a table with the numbers below it.
 
 To add a film, export the video from TIB-AV-A and put the `.zip` file in `data/exports/`.
 
+`data/exports_emb/` contains exports of the same films from a newer TIB-AV-A version with improved results. To use them, enter that folder in the sidebar. These exports have no ground truth or face emotions, but add the camera movement per shot (`Shot Movements`, available in patterns as `shot.movement`). Some timelines are named differently there (e.g. `Shot Scales` instead of `Shot Sizes`, `Medium` instead of `Medium Shot`); the app renames them on loading, so patterns work the same way with both versions.
+
 ## Notebooks
 
 `notebooks/` contains the Jupyter notebooks and scripts for the statistical film analysis:
